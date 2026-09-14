@@ -1,0 +1,3 @@
+import { PawPrint, Cat, Bird, Beef, Turtle, Bug, Flower2, Waves, House, Moon, Footprints, Mouse, Utensils, Gift, DoorOpen, HeartPulse, Plus, Landmark, Map, Users } from 'lucide-react';
+const icons = { paw:PawPrint, cat:Cat, bird:Bird, beef:Beef, horse:Beef, turtle:Turtle, bug:Bug, flower:Flower2, waves:Waves, house:House, moon:Moon, footprints:Footprints, mouse:Mouse, utensils:Utensils, gift:Gift, door:DoorOpen, heart:HeartPulse, plus:Plus, landmark:Landmark, map:Map, wc:Users };
+export default function Icon({name,size=20}:{name:string;size?:number}) { const Component=icons[name as keyof typeof icons] || PawPrint; return <Component size={size} strokeWidth={1.9} aria-hidden="true"/>; }

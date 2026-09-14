@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {toLocal,toCoordinates,inPolygon,locationQuality,ORIGIN} from '../lib/geo.ts';
+import {mapPosition,locationError} from '../lib/location.ts';
+const data=JSON.parse(fs.readFileSync(new URL('../data/geography.json',import.meta.url),'utf8'));
+test('geographic origin is the same in the scene and GPS code',()=>{assert.deepEqual(data.origin,ORIGIN);assert.deepEqual(toLocal(ORIGIN.lat,ORIGIN.lon),[0,0]);});
+test('WGS84 conversion round trips across the entire zoo',()=>{for(const [x,north] of data.boundary){const p=toCoordinates(x,north),q=toLocal(p.lat,p.lon);assert.ok(Math.abs(x-q[0])<.000001);assert.ok(Math.abs(north-q[1])<.000001);}});
+test('east and north map to metres with correct axes',()=>{assert.ok(Math.abs(toLocal(ORIGIN.lat,ORIGIN.lon+.001)[0]-77.58)<1);assert.ok(Math.abs(toLocal(ORIGIN.lat+.001,ORIGIN.lon)[1]-111.319)<.01);});
+test('location outside zoo is never snapped into an enclosure',()=>{assert.equal(inPolygon(toLocal(45.813,15.977),data.boundary),false);const lion=data.pois.find(p=>p.id==='osm-311979811');assert.equal(inPolygon(lion.point,data.boundary),true);});
+test('GPS uncertainty remains explicit at accuracy thresholds',()=>{assert.equal(locationQuality(10),'good');assert.equal(locationQuality(20),'good');assert.equal(locationQuality(21),'approximate');assert.equal(locationQuality(60),'approximate');assert.equal(locationQuality(61),'poor');});
+test('geographic data has unique IDs and finite geometry',()=>{assert.equal(new Set(data.pois.map(p=>p.id)).size,data.pois.length);for(const f of data.features)for(const p of f.points)assert.ok(p.length===2&&p.every(Number.isFinite));assert.equal(data.fieldVerified,false);});
+test('simulated GPS fix retains uncertainty and timestamp',()=>{const coords=toCoordinates(51,69),fix=mapPosition({coords:{latitude:coords.lat,longitude:coords.lon,accuracy:82},timestamp:1234},data.boundary);assert.equal(fix.inside,true);assert.equal(fix.accuracy,82);assert.equal(fix.timestamp,1234);assert.equal(locationQuality(fix.accuracy),'poor');});
+test('simulated outside position does not appear inside the zoo',()=>{const fix=mapPosition({coords:{latitude:45.81,longitude:15.98,accuracy:5},timestamp:1234},data.boundary);assert.equal(fix.inside,false);});
+test('permission denial, unavailable GPS and timeout have distinct recovery messages',()=>{assert.match(locationError(1),/nije dopuštena/);assert.match(locationError(2),/nije dostupan/);assert.match(locationError(3),/na vrijeme/);});
+test('malformed GPS readings are rejected',()=>{assert.throws(()=>mapPosition({coords:{latitude:NaN,longitude:16,accuracy:10},timestamp:1234},data.boundary));assert.throws(()=>mapPosition({coords:{latitude:45,longitude:16,accuracy:-5},timestamp:1234},data.boundary));});
