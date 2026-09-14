@@ -13,6 +13,18 @@ npm run build
 
 Na ovom Windows računalu radi i izravan poziv `node scripts/build.mjs`. Produkcijski rezultat je `dist/client`. Aplikacija se objavljuje kao statična HTTPS stranica; nema baze ni poslužiteljskog praćenja lokacije. Vite statična izgradnja izbjegava problem zatvaranja procesa Vinext/Node na Windowsu. Izvorne starter ovisnosti zadržane su u zaključanoj datoteci.
 
+## Vercel
+
+Repozitorij je pripremljen za Vercel kroz `vercel.json`. Nakon uvoza GitHub repozitorija `rastadipasta/ZOO-ZAGREB` postavke su:
+
+- Framework preset: Vite
+- Install command: `npm ci`
+- Build command: `npm run build`
+- Output directory: `dist/client`
+- Environment variables: nisu potrebne
+
+Vercel će nakon svakog push-a na `main` izraditi produkcijsku objavu, a za pull request grane preglednu objavu.
+
 ## Blender
 
 ```powershell
