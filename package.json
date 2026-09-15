@@ -9,6 +9,8 @@
     "install:ci": "node scripts/install-ci.mjs",
     "dev": "vite --config vite.static.config.ts --port 5173",
     "build": "node scripts/build.mjs",
+    "blender:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-blender.ps1",
+    "blender:validate": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/validate-blender.ps1",
     "test": "node --test scripts/geo.test.mjs",
     "start": "vite preview --config vite.static.config.ts --host 127.0.0.1 --port 5173",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

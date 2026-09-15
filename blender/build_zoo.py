@@ -2,10 +2,12 @@
 Coordinates: X east, Y north, Z up; glTF export converts to Y up automatically.
 Geography is OSM; architectural detail and vegetation are interpretive artwork.
 """
-import bpy, math, json, random, pathlib
+import bpy, math, json, random, pathlib, sys
 from mathutils import Vector
 from mathutils.geometry import tessellate_polygon
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT/'blender'))
+import animals
 G=json.loads((ROOT/'data/geography.json').read_text(encoding='utf8'))
 random.seed(42)
 bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
@@ -162,45 +164,7 @@ for f in enclosures:
     for j in range(12):
         p=random.choice(ps);x=p[0]*.65+cx*.35+random.uniform(-2,2);y=p[1]*.65+cy*.35+random.uniform(-2,2)
         for k in range(3):tube('leaf3',(x+k*.18,y,.3),(x+k*.18+.14,y+.12,random.uniform(.6,1.2)),.05,3,.005)
-# Readable miniature animal sculptures, deliberately enlarged like the reference.
-def animal(kind,x,y,scale=1,angle=0):
-    co,si=math.cos(angle),math.sin(angle)
-    def p(a,b,c):return(x+(a*co-b*si)*scale,y+(a*si+b*co)*scale,c*scale+.3)
-    def e(m,c,s):ell(m,p(*c),tuple(v*scale for v in s))
-    def t(m,a,b,r):tube(m,p(*a),p(*b),r*scale)
-    if kind in ['bird','pelican','owl']:
-        e('animalwhite' if kind=='pelican' else 'animaldark',(0,0,1.4),(1.1,.65,.85))
-        t('animalgold',(.3,0,1.5),(.65,0,2.6),.15);e('animalwhite',(.65,0,2.7),(.35,.3,.35));t('animalgold',(.9,0,2.7),(1.5,0,2.6),.13)
-        for yy in [-.3,.3]:t('animalgold',(0,yy,.1),(0,yy,1),.07)
-        return
-    mat='animalgold' if kind in ['lion','camel','leopard','goat'] else 'animalwhite' if kind in ['zebra','orix'] else 'animalbrown' if kind in ['bison','horse','bear'] else 'animaldark'
-    e(mat,(0,0,1.65),(1.8,.8,.85));headz=2.3;headx=1.75
-    if kind in ['camel','horse','orix','goat']:
-        t(mat,(1,0,1.7),(1.65,0,3),.36);headz=3.05
-    if kind=='camel':
-        e(mat,(-.65,0,2.3),(.65,.6,.8));e(mat,(.45,0,2.3),(.6,.6,.8));headz=3.3
-    if kind=='bison':e('animaldark',(.75,0,2.05),(1,.9,1.1))
-    if kind=='lion':e('animalbrown',(1.4,0,2.2),(.9,.9,1))
-    e(mat,(headx,0,headz),(.7,.52,.58));e('black',(headx+.6,0,headz-.12),(.14,.28,.18))
-    for yy in [-.42,.42]:
-        e(mat,(headx-.1,yy,headz+.45),(.2,.2,.27));e('black',(headx+.25,yy*1.13,headz+.12),(.07,.065,.07))
-    for xx in [-1.1,1.05]:
-        for yy in [-.5,.5]:t(mat,(xx,yy,.15),(xx,yy,1.65),.18);e('black',(xx+.1,yy,.14),(.25,.23,.14))
-    t(mat,(-1.6,0,1.8),(-2.4,.15,1.1),.1)
-    if kind in ['orix','goat','bison']:
-        for yy in [-.35,.35]:t('cream',(headx,yy,headz+.4),(headx-.5,yy*1.7,headz+1.65),.09)
-    if kind=='zebra':
-        for xx in [-1.2,-.75,-.3,.2,.7]:
-            for yy in [-.74,.74]:t('black',(xx,yy,1.1),(xx+.22,yy,2.15),.12)
-    if kind=='leopard':
-        for j in range(18):e('black',(random.uniform(-1.2,1.1),random.choice([-.73,.73]),random.uniform(1.2,2.1)),(.09,.06,.1))
-for f in enclosures:
-    name=f['tags'].get('name','').lower();kind=f['tags'].get('animal','').split(';')[0]
-    for needle,k in [('zebra','zebra'),('konj','horse'),('deva','camel'),('oriks','orix'),('noj','bird'),('ptice','bird'),('sup','bird'),('ljama','camel'),('tapir','tapir'),('panda','leopard'),('vodenkonj','hippo'),('ris','leopard'),('serval','leopard')]:
-        if needle in name:kind=k
-    if kind not in ['lion','camel','bison','horse','zebra','orix','bird','pelican','owl','bear','leopard','goat','tapir','hippo']:continue
-    x,y=f['center'];animal(kind,x-2,y,1.6,random.uniform(-1,1))
-    if kind in ['zebra','camel','horse','bird','orix']:animal(kind,x+6,y+3,1.3,random.uniform(-1,1))
+# Chibi animal assets are generated later as linked, reusable mesh instances.
 # Aviary ribbed domes and glass pavilions.
 for f in enclosures:
     if not any(q in f['tags'].get('name','').lower() for q in ['volijera','sup']):continue
@@ -238,7 +202,13 @@ scene.render.resolution_x=1600;scene.render.resolution_y=1100;scene.render.resol
 scene.render.image_settings.file_format='PNG';scene.render.film_transparent=True
 scene.view_settings.view_transform='AgX'
 (ROOT/'public/models').mkdir(parents=True,exist_ok=True)
-bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'blender/zoo-zagreb.blend'))
-bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models/zoo-zagreb.glb'),export_format='GLB',export_cameras=False,export_lights=False,export_draco_mesh_compression_enable=True,export_draco_mesh_compression_level=6)
+print('Building 21 reusable chibi animal assets...',flush=True)
+animal_assets,animal_library=animals.build_library(ROOT)
+animal_instances=animals.place_existing(enclosures,animal_assets)
+animals.render_contact_sheet(ROOT,animal_assets)
+bpy.context.window.scene=scene
+animals.select_main_export_objects(scene,animal_library)
+bpy.ops.export_scene.gltf(filepath=str(ROOT/'public/models/zoo-zagreb.glb'),export_format='GLB',use_selection=True,export_cameras=False,export_lights=False,export_draco_mesh_compression_enable=True,export_draco_mesh_compression_level=6)
 scene.render.filepath=str(ROOT/'blender/preview.png');bpy.ops.render.render(write_still=True)
-print('DONE: Blender source, GLB and preview saved.',flush=True)
+bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'blender/zoo-zagreb.blend'))
+print('DONE: Blender source, 22 GLBs and two previews saved.',flush=True)

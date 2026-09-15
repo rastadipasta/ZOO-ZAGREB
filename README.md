@@ -28,11 +28,12 @@ Vercel će nakon svakog push-a na `main` izraditi produkcijsku objavu, a za pull
 ## Blender
 
 ```powershell
-& 'C:\Program Files\Blender Foundation\Blender 5.2\5.2\python\bin\python.exe' scripts/prepare-geography.py
-& 'C:\Program Files\Blender Foundation\Blender 5.2\blender.exe' --background --python blender/build_zoo.py
+npm run blender:build
 ```
 
-Rezultati: `blender/zoo-zagreb.blend`, `blender/preview.png`, `public/models/zoo-zagreb.glb`. GLB je komprimiran Dracom, a dekoder se poslužuje lokalno. Geometrija je objedinjena po materijalima. Biljke, arhitektonski detalji i minijature životinja su umjetnička interpretacija, a ne geodetski model. Nema vanjskog API ključa niti poziva AI modela iz aplikacije.
+Naredba kroz Blender 5.2 generira i provjerava `blender/zoo-zagreb.blend`, pregled cijele karte `blender/preview.png`, kontaktni pregled `blender/animals-preview.png`, glavni `public/models/zoo-zagreb.glb` i 21 zasebni chibi asset u `public/models/animals/`. Na karti se koristi 29 povezanih instanci na 21 postojećoj lokaciji. Svaka životinja je jedan multi-material mesh, ima ishodište u sredini i stopala na Z=0.
+
+GLB datoteke su komprimirane Dracom, a dekoder se poslužuje lokalno. Vegetacija, arhitektonski detalji i minijature životinja umjetnička su interpretacija, a ne geodetski model. Nema vanjskog API ključa niti poziva AI modela iz aplikacije.
 
 ## Sadržaj i geografska veza
 
