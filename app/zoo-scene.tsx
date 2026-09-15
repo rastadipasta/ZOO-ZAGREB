@@ -9,8 +9,9 @@ import { categories, type Place } from '../lib/places';
 export type MapAction = {type:'home'|'in'|'out'|'north'|'focus';point?:number[];seq:number};
 export type Position = { point:[number,number]; accuracy:number; timestamp:number; inside:boolean };
 type Props = {places:Place[]; selected:string|null; onSelect:(p:Place)=>void; action:MapAction; position:Position|null; onReady:()=>void; low:boolean; onHeading:(value:number)=>void};
+const ZOO_MODEL_URL='/models/zoo-zagreb.glb?rev=chibi-v1';
 function Model({onReady}:{onReady:()=>void}) {
-  const {scene} = useGLTF('/models/zoo-zagreb.glb','/draco/');
+  const {scene} = useGLTF(ZOO_MODEL_URL,'/draco/');
   useEffect(()=>{scene.traverse(o=>{if(o instanceof THREE.Mesh){o.receiveShadow=true;o.castShadow=true;}});onReady();},[scene,onReady]);
   return <primitive object={scene}/>;
 }
